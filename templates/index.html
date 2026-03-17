@@ -104,294 +104,324 @@
     </div>
 
     <script>
-        const grid = document.getElementById('gallery-grid');
-        const emptyState = document.getElementById('empty-state');
-        const uploader = document.getElementById('file-upload');
-        const modal = document.getElementById('lightbox');
-        const modalImg = document.getElementById('lightbox-display');
-        const closeModal = document.getElementById('close-modal');
-        const metaFilename = document.getElementById('meta-filename');
-        const metaDetails = document.getElementById('meta-details');
-        const btnDelete = document.getElementById('action-delete');
+      const grid = document.getElementById('gallery-grid');
+      const emptyState = document.getElementById('empty-state');
+      const uploader = document.getElementById('file-upload');
+      const modal = document.getElementById('lightbox');
+      const modalImg = document.getElementById('lightbox-display');
+      const closeModal = document.getElementById('close-modal');
+      const metaFilename = document.getElementById('meta-filename');
+      const metaDetails = document.getElementById('meta-details');
+      const btnDelete = document.getElementById('action-delete');
 
-        // Selection variables
-        const selectionBar = document.getElementById('selection-bar');
-        const selectionCountEl = document.getElementById('selection-count');
-        const btnDeleteSelected = document.getElementById('delete-selected');
-        const btnCancelSelection = document.getElementById('cancel-selection');
-        const selectionBox = document.getElementById('selection-box');
+      // Selection elements
+      const selectionBar = document.getElementById('selection-bar');
+      const selectionCountEl = document.getElementById('selection-count');
+      const btnDeleteSelected = document.getElementById('delete-selected');
+      const btnCancelSelection = document.getElementById('cancel-selection');
+      const selectionBox = document.getElementById('selection-box');
 
-        let activePath = null;
-        let selectedPaths = new Set();
-        let isDragging = false;
-        let startX, startY;
+      let activePath = null;
+      let selectedPaths = new Set();
+      let isDragging = false;
+      let startPageX, startPageY;
 
+      /**
+        * Fetch all photos from the Rust backend
+        * Updated to "diff" the DOM instead of clearing it to prevent flickering.
+        */
         async function fetchGallery() {
-            try {
-                const res = await fetch('/api/v1/images');
-                const images = await res.json();
-                if (!images.length) {
-                    grid.classList.add('hidden');
-                    emptyState.classList.remove('hidden');
-                    clearSelection();
-                } else {
-                    grid.classList.remove('hidden');
-                    emptyState.classList.add('hidden');
-                    grid.innerHTML = '';
-                    images.forEach(p => createThumbnail(p));
-                    // Keep selection state if we refreshed
-                    updateSelectionUI();
-                }
-            } catch (err) {
-                console.error("Failed to fetch gallery:", err);
-            }
-        }
+          try {
+            const res = await fetch('/api/v1/photos');
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            const images = await res.json();
 
-        async function deleteImage(path, silent = false) {
-            if (!silent && !confirm(`Delete "${path.split('/').pop()}"?`)) return;
-            try {
-                const res = await fetch(`/api/v1/images/${encodeURIComponent(path)}`, { method: 'DELETE' });
-                if (res.ok) {
-                    if (activePath === path) hideLightbox();
-                    selectedPaths.delete(path);
-                    return true;
-                }
-            } catch (err) {
-                console.error("Delete failed:", err);
-            }
-            return false;
-        }
-
-        async function deleteBatch() {
-            const count = selectedPaths.size;
-            if (!confirm(`Delete ${count} selected images?`)) return;
-
-            const paths = Array.from(selectedPaths);
-            for (const path of paths) {
-                await deleteImage(path, true);
-            }
-            clearSelection();
-            await fetchGallery();
-        }
-
-        function createThumbnail(path) {
-            const card = document.createElement('div');
-            const isSelected = selectedPaths.has(path);
-            card.dataset.path = path;
-            card.className = `image-card group relative aspect-square bg-gray-900 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:ring-4 hover:ring-blue-600/50 ${isSelected ? 'selected' : ''}`;
-            card.innerHTML = `
-                <img src="/images/${encodeURIComponent(path)}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none" loading="lazy">
-                <button class="quick-delete absolute top-3 right-3 z-20 bg-red-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg opacity-0 scale-90 transition-all duration-200 hover:bg-red-500 hover:scale-110">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-                <div class="selection-indicator absolute top-3 left-3 z-20 bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg opacity-0 transition-opacity">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-                </div>
-                <div class="overlay absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent opacity-0 transition-opacity duration-300 flex items-end p-4 pointer-events-none">
-                    <p class="text-xs truncate w-full text-white font-medium">${path.split('/').pop()}</p>
-                </div>`;
-
-            card.onclick = (e) => {
-                if (e.shiftKey || selectedPaths.size > 0) {
-                    toggleSelection(path);
-                } else {
-                    showLightbox(path);
-                }
-            };
-
-            card.querySelector('.quick-delete').onclick = (e) => {
-                e.stopPropagation();
-                deleteImage(path);
-            };
-
-            grid.appendChild(card);
-        }
-
-        function toggleSelection(path) {
-            if (selectedPaths.has(path)) {
-                selectedPaths.delete(path);
+            if (!images || !images.length) {
+              grid.classList.add('hidden');
+              emptyState.classList.remove('hidden');
+              grid.innerHTML = '';
             } else {
-                selectedPaths.add(path);
-            }
-            updateSelectionUI();
-        }
+              grid.classList.remove('hidden');
+              emptyState.classList.add('hidden');
 
-        function clearSelection() {
-            selectedPaths.clear();
-            updateSelectionUI();
-        }
-
-        function updateSelectionUI() {
-            const cards = document.querySelectorAll('.image-card');
-            cards.forEach(card => {
-                if (selectedPaths.has(card.dataset.path)) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
+              // 1. Remove elements that are no longer in the images list
+              const currentFilenames = new Set(images.map(img => img.name));
+              Array.from(grid.children).forEach(card => {
+                if (!currentFilenames.has(card.dataset.path)) {
+                  card.remove();
                 }
+              });
+
+              // 2. Add new elements or update existing ones
+              images.forEach((photo, index) => {
+                const existingCard = grid.querySelector(`[data-path="${photo.name}"]`);
+                if (!existingCard) {
+                  // Create new thumbnail
+                  const newCard = createThumbnail(photo);
+                  // Insert at correct index to maintain sort order (modified time)
+                  if (index >= grid.children.length) {
+                    grid.appendChild(newCard);
+                  } else {
+                    grid.insertBefore(newCard, grid.children[index]);
+                  }
+                }
+              });
+
+              updateSelectionUI();
+            }
+          } catch (err) {
+            console.error("Gallery fetch failed:", err);
+          }
+        }
+
+      /**
+        * Deletes a single image
+        */
+        async function deleteImage(filename, silent = false) {
+          if (!silent && !confirm(`Delete "${filename}"?`)) return;
+          try {
+            const res = await fetch(`/api/v1/photos/${filename}`, { method: 'DELETE' });
+            if (res.ok) {
+              if (activePath === filename) hideLightbox();
+              selectedPaths.delete(filename);
+              updateSelectionUI();
+              fetchGallery();
+              return true;
+            }
+          } catch (err) {
+            console.error("Delete request error:", err);
+          }
+          return false;
+        }
+
+      /**
+        * Batch delete selected images
+        */
+        async function deleteBatch() {
+          const count = selectedPaths.size;
+          if (!confirm(`Delete ${count} selected images?`)) return;
+
+          const paths = Array.from(selectedPaths);
+          try {
+            const res = await fetch('/api/v1/delete-multiple', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paths })
             });
 
-            const count = selectedPaths.size;
-            selectionCountEl.textContent = count;
+            if (res.ok) {
+              clearSelection();
+              fetchGallery();
+            }
+          } catch (err) {
+            console.error("Batch delete failed:", err);
+          }
+        }
 
-            if (count > 0) {
-                selectionBar.classList.remove('translate-y-32', 'opacity-0');
+      /**
+        * Creates the DOM element for a photo thumbnail
+        */
+        function createThumbnail(photo) {
+          const filename = photo.name;
+          const isSelected = selectedPaths.has(filename);
+
+          const card = document.createElement('div');
+          card.dataset.path = filename;
+          card.className = `image-card group relative aspect-square bg-gray-900 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:ring-4 hover:ring-blue-600/50 ${isSelected ? 'selected' : ''}`;
+
+          card.innerHTML = `
+            <img src="/photos/${filename}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none" loading="lazy">
+            <button class="quick-delete absolute top-3 right-3 z-20 bg-red-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg opacity-0 scale-90 transition-all duration-200 hover:bg-red-500 hover:scale-110">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div class="selection-indicator absolute top-3 left-3 z-20 bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg opacity-0 transition-opacity">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+            </div>`;
+
+          card.onclick = (e) => {
+            if (e.shiftKey || selectedPaths.size > 0) {
+              toggleSelection(filename);
             } else {
-                selectionBar.classList.add('translate-y-32', 'opacity-0');
+              showLightbox(filename, photo);
             }
+          };
+
+          card.querySelector('.quick-delete').onclick = (e) => {
+            e.stopPropagation();
+            deleteImage(filename);
+          };
+
+          return card;
         }
 
-        // Click and Drag Selection Logic
-        window.addEventListener('mousedown', (e) => {
-            // Only start drag if clicking background or grid (not buttons/cards directly for start)
-            if (modal.classList.contains('flex')) return;
+      function toggleSelection(path) {
+        if (selectedPaths.has(path)) selectedPaths.delete(path);
+        else selectedPaths.add(path);
+        updateSelectionUI();
+      }
 
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
+      function clearSelection() {
+        selectedPaths.clear();
+        updateSelectionUI();
+      }
 
-            selectionBox.style.left = `${startX}px`;
-            selectionBox.style.top = `${startY}px`;
-            selectionBox.style.width = '0px';
-            selectionBox.style.height = '0px';
+      function updateSelectionUI() {
+        document.querySelectorAll('.image-card').forEach(card => {
+          if (selectedPaths.has(card.dataset.path)) card.classList.add('selected');
+          else card.classList.remove('selected');
         });
-
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-
-            const currentX = e.clientX;
-            const currentY = e.clientY;
-
-            const width = Math.abs(currentX - startX);
-            const height = Math.abs(currentY - startY);
-            const left = Math.min(currentX, startX);
-            const top = Math.min(currentY, startY);
-
-            if (width > 5 || height > 5) {
-                selectionBox.style.display = 'block';
-                selectionBox.style.left = `${left}px`;
-                selectionBox.style.top = `${top}px`;
-                selectionBox.style.width = `${width}px`;
-                selectionBox.style.height = `${height}px`;
-
-                // Real-time selection preview
-                const boxRect = selectionBox.getBoundingClientRect();
-                const cards = document.querySelectorAll('.image-card');
-
-                cards.forEach(card => {
-                    const cardRect = card.getBoundingClientRect();
-                    const isOverlapping = !(
-                        cardRect.right < boxRect.left ||
-                        cardRect.left > boxRect.right ||
-                        cardRect.bottom < boxRect.top ||
-                        cardRect.top > boxRect.bottom
-                    );
-
-                    if (isOverlapping) {
-                        selectedPaths.add(card.dataset.path);
-                    }
-                });
-                updateSelectionUI();
-            }
-        });
-
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            selectionBox.style.display = 'none';
-        });
-
-        async function showLightbox(path) {
-            activePath = path;
-            modalImg.src = `/images/${encodeURIComponent(path)}`;
-            metaFilename.textContent = path.split('/').pop();
-            modal.classList.replace('hidden', 'flex');
-            document.body.style.overflow = 'hidden';
-
-            try {
-                const res = await fetch(`/api/v1/images/${encodeURIComponent(path)}`);
-                if (res.ok) {
-                    const data = await res.json();
-
-                    const bytes = data.size || 0;
-                    const timestamp = data.last_modified;
-
-                    let sizeText = "0 bytes";
-                    if (bytes >= 1048576) {
-                        sizeText = (bytes / 1048576).toFixed(2) + " MB";
-                    } else if (bytes >= 1024) {
-                        sizeText = (bytes / 1024).toFixed(1) + " KB";
-                    } else if (bytes > 0) {
-                        sizeText = bytes + " B";
-                    }
-
-                    let dateText = "Unknown date";
-                    if (timestamp) {
-                        dateText = new Date(timestamp * 1000).toLocaleString(undefined, {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    }
-
-                    metaDetails.textContent = `${sizeText} • Modified: ${dateText}`;
-                } else {
-                    metaDetails.textContent = "Details unavailable";
-                }
-            } catch (err) {
-                console.error("Failed to fetch image details:", err);
-            }
+        selectionCountEl.textContent = selectedPaths.size;
+        if (selectedPaths.size > 0) {
+          selectionBar.classList.remove('translate-y-32', 'opacity-0');
+          selectionBar.classList.add('translate-y-0', 'opacity-100');
+        } else {
+          selectionBar.classList.add('translate-y-32', 'opacity-0');
+          selectionBar.classList.remove('translate-y-0', 'opacity-100');
         }
+      }
 
-        function hideLightbox() {
-            modal.classList.replace('flex', 'hidden');
-            modalImg.src = '';
-            document.body.style.overflow = 'auto';
-            activePath = null;
-        }
+      // --- Drag selection logic ---
 
-        closeModal.onclick = (e) => { e.stopPropagation(); hideLightbox(); };
-        modal.onclick = hideLightbox;
-        document.getElementById('lightbox-image-container').onclick = e => e.stopPropagation();
-        document.getElementById('lightbox-info-panel').onclick = e => e.stopPropagation();
-        btnDelete.onclick = () => activePath && deleteImage(activePath);
+      window.addEventListener('mousedown', (e) => {
+        // Ignore if lightbox is open or we are clicking interactive elements
+        if (modal.classList.contains('flex') || e.target.closest('button') || e.target.closest('.image-card') || e.target.closest('#selection-bar')) return;
 
-        btnDeleteSelected.onclick = deleteBatch;
-        btnCancelSelection.onclick = clearSelection;
+        isDragging = true;
+        // Use page coordinates to handle scrolling correctly
+        startPageX = e.pageX;
+        startPageY = e.pageY;
 
-        uploader.onchange = async () => {
-            for (const file of uploader.files) {
-                const data = new FormData();
-                data.append('file', file);
-                try {
-                    await fetch('/api/v1/upload', { method: 'POST', body: data });
-                } catch (err) {
-                    console.error("Upload failed for:", file.name, err);
-                }
+        selectionBox.style.left = `${startPageX}px`;
+        selectionBox.style.top = `${startPageY}px`;
+        selectionBox.style.width = '0px';
+        selectionBox.style.height = '0px';
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        const currentPageX = e.pageX;
+        const currentPageY = e.pageY;
+
+        const width = Math.abs(currentPageX - startPageX);
+        const height = Math.abs(currentPageY - startPageY);
+        const left = Math.min(currentPageX, startPageX);
+        const top = Math.min(currentPageY, startPageY);
+
+        if (width > 5 || height > 5) {
+          selectionBox.style.display = 'block';
+          selectionBox.style.left = `${left}px`;
+          selectionBox.style.top = `${top}px`;
+          selectionBox.style.width = `${width}px`;
+          selectionBox.style.height = `${height}px`;
+
+          // Get viewport-relative box for collision detection
+          const boxRect = selectionBox.getBoundingClientRect();
+
+          document.querySelectorAll('.image-card').forEach(card => {
+            const r = card.getBoundingClientRect();
+            // Standard AABB collision check
+            const overlap = !(
+              r.right < boxRect.left ||
+              r.left > boxRect.right ||
+              r.bottom < boxRect.top ||
+              r.top > boxRect.bottom
+            );
+
+            if (overlap) {
+              selectedPaths.add(card.dataset.path);
             }
-            uploader.value = '';
+          });
+          updateSelectionUI();
+        }
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+        selectionBox.style.display = 'none';
+      });
+
+      // --- Lightbox logic ---
+
+      async function showLightbox(filename, photoData = null) {
+        activePath = filename;
+        modalImg.src = `/photos/${filename}`;
+        metaFilename.textContent = filename;
+        modal.classList.replace('hidden', 'flex');
+        document.body.style.overflow = 'hidden';
+
+        if (photoData) {
+          const size = photoData.size >= 1048576 ? (photoData.size / 1048576).toFixed(2) + " MB" : (photoData.size / 1024).toFixed(1) + " KB";
+          const date = photoData.modified ? new Date(photoData.modified * 1000).toLocaleString() : "Unknown";
+          metaDetails.textContent = `${size} • Modified: ${date}`;
+        }
+      }
+
+      function hideLightbox() {
+        modal.classList.replace('flex', 'hidden');
+        modalImg.src = '';
+        document.body.style.overflow = 'auto';
+        activePath = null;
+      }
+
+      // --- Event Listeners ---
+
+      closeModal.onclick = hideLightbox;
+      modal.onclick = (e) => {
+        if (e.target === modal || e.target.id === 'lightbox-image-container') hideLightbox();
+      };
+
+      btnDelete.onclick = () => activePath && deleteImage(activePath);
+      btnDeleteSelected.onclick = deleteBatch;
+      btnCancelSelection.onclick = clearSelection;
+
+      uploader.onchange = async () => {
+        const endpoint = '/api/v1/upload';
+        let anySuccess = false;
+
+        for (const file of uploader.files) {
+          const data = new FormData();
+          data.append('file', file);
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              body: data
+            });
+            if (response.ok) {
+              anySuccess = true;
+            } else {
+              console.error(`Upload failed: ${response.status}`);
+            }
+          } catch (err) {
+            console.error("Upload Error:", err);
+          }
+        }
+        uploader.value = '';
+
+        if (anySuccess) {
+          fetchGallery();
+          setTimeout(fetchGallery, 500);
+        }
+      };
+
+      function initRealtime() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+        ws.onmessage = () => fetchGallery();
+        ws.onclose = () => {
+          setTimeout(() => initRealtime(), 3000);
         };
+      }
 
-        function initRealtime() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-            ws.onmessage = () => fetchGallery();
-            ws.onclose = () => {
-                console.warn("WS closed. Reconnecting...");
-                setTimeout(() => window.location.reload(), 3000);
-            };
+      window.onkeydown = (e) => {
+        if (e.key === 'Escape') {
+          if (selectedPaths.size > 0) clearSelection();
+          else hideLightbox();
         }
+      };
 
-        window.onkeydown = (e) => {
-            if (e.key === 'Escape') {
-                if (selectedPaths.size > 0) clearSelection();
-                else hideLightbox();
-            }
-        };
-
-        fetchGallery();
-        initRealtime();
+      fetchGallery();
+      initRealtime();
     </script>
 </body>
 </html>

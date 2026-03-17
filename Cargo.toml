@@ -1,27 +1,60 @@
 [package]
 name = "gallery-rs"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
+authors = ["yonasBSD"]
+description = "A secure, real-time photo gallery server"
+license = "MIT"
+repository = "https://github.com/yourusername/gallery-rs"
+
+[features]
+default = []
 
 [dependencies]
-axum = { version = "0.8", features = ["ws", "multipart"] }
+# Web framework
+axum = { version = "0.8", features = ["ws", "multipart", "macros"] }
 tokio = { version = "1", features = ["full"] }
-tower-http = { version = "0.6", features = ["fs"] }
-notify = "8.2"
-clap = { version = "4", features = ["derive"] }
-futures-util = "0.3"
-miette = { version = "7.6.0", features = ["fancy", "syntect-highlighter"] }
-snafu = "0.9.0"
-thiserror = "2.0.18"
-walkdir = "2.5.0"
-serde_json = "1.0.149"
-serde = { version = "1.0.228", features = ["derive"] }
-http-body-util = "0.1"
 tower = "0.5"
+tower-http = { version = "0.6", features = ["fs", "cors", "trace"] }
+
+# File system watching
+notify = "8.2"
+walkdir = "2.5"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling & logging
+miette = { version = "7.6", features = ["fancy", "syntect-highlighter"] }
+snafu = "0.9"
+thiserror = "2.0"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-appender = "0.2"
+
+# CLI & config
+clap = { version = "4", features = ["derive", "env"] }
+config = "0.15"
+dotenvy = "0.15"
+
+# Utilities
+futures-util = "0.3"
+mime = "0.3"
+mime_guess = "2.0"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.22", features = ["v4", "serde"] }
+bytes = "1.11"
+sanitize-filename = "0.6"
+include_dir = "0.7.4"
+tempfile = "3.27"
 
 [dev-dependencies]
-# Needed for integration tests
-tower = "0.5"
+tokio-test = "0.4"
+assert-json-diff = "2.0"
+tempfile = "3.27"
+reqwest = { version = "0.13", features = ["json", "multipart"] }
+tokio-tungstenite = "0.28"
+futures = "0.3"
 http-body-util = "0.1"
+url = "2.5.8"
