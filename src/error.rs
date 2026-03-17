@@ -6,6 +6,12 @@ use axum::{
 };
 use serde_json::json;
 use thiserror::Error;
+use tracing::warn;
+
+#[allow(dead_code)]
+fn _log_error_module() {
+    warn!("error module loaded");
+}
 
 pub type AppResult<T> = Result<T, AppError>;
 

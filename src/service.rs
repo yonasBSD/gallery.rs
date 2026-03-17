@@ -15,10 +15,14 @@ pub struct GalleryService {
 
 impl GalleryService {
     pub async fn new(config: Config) -> miette::Result<Self> {
+        use tracing::{debug, info, trace};
+        trace!("GalleryService::new called");
         if !config.storage_dir.exists() {
+            debug!(path = %config.storage_dir.display(), "storage_dir does not exist, creating");
             tokio::fs::create_dir_all(&config.storage_dir)
                 .await
                 .map_err(|e| miette::miette!("Failed to create storage directory: {}", e))?;
+            info!("storage_dir created");
         }
 
         let state = AppState::new(config.storage_dir.clone());

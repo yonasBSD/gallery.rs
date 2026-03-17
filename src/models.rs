@@ -1,5 +1,12 @@
 // src/models.rs
 use serde::{Deserialize, Serialize};
+use tracing::{debug, trace};
+
+#[allow(dead_code)]
+fn _log_models_module() {
+    trace!("models module loaded");
+    debug!("Photo and DeleteRequest types available");
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Photo {

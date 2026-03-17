@@ -2,6 +2,13 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::broadcast;
+use tracing::{debug, trace};
+
+#[allow(dead_code)]
+fn _log_state_module() {
+    trace!("state module loaded");
+    debug!("AppState ready");
+}
 
 #[derive(Clone)]
 pub struct AppState {

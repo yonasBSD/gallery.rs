@@ -2,6 +2,13 @@
 // RESTORING ARCHITECTURE
 use clap::Parser;
 use std::path::PathBuf;
+use tracing::{debug, trace};
+
+#[allow(dead_code)]
+fn _log_config_module() {
+    trace!("config module loaded");
+    debug!("Config defaults set");
+}
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]

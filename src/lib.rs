@@ -15,10 +15,13 @@ pub use crate::service::GalleryService;
 pub use crate::state::AppState;
 
 pub async fn run(config: crate::config::Config) -> miette::Result<()> {
+    tracing::trace!("run() called: config = {:?}", &config);
     let service = GalleryService::new(config).await?;
+    tracing::debug!("service created, entering run");
     service
         .run()
         .await
         .map_err(|e| miette::miette!(e.to_string()))?;
+    tracing::info!("run() completed successfully");
     Ok(())
 }

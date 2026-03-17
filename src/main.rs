@@ -6,9 +6,13 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 async fn main() -> miette::Result<()> {
     // Initialize logging
     tracing_subscriber::registry()
-        .with(tracing_subscriber::EnvFilter::new("info"))
+        // Check RUST_LOG first, and default to "info" if RUST_LOG is empty/unset
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .with(tracing_subscriber::fmt::layer())
         .init();
+    tracing::debug!("tracing initialized");
 
     // Parse configuration from CLI
     let config = Config::from_args();
