@@ -3,425 +3,585 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rust Gallery Explorer</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Gallery - High Resolution Art Platform</title>
     <style>
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-        .image-card:hover .overlay { opacity: 1; }
-        .image-card:hover .quick-delete { opacity: 1; transform: scale(1); }
-        #lightbox.flex { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        /* Selection styles */
-        .image-card.selected {
-            ring: 4px solid #3b82f6;
-            transform: scale(0.95);
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        .image-card.selected .selection-indicator {
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0a;
+            color: #ffffff;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+        
+        .upload-area {
+            max-width: 600px;
+            margin: 0 auto 30px;
+            padding: 30px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px dashed #444;
+        }
+        
+        .upload-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.3s;
+        }
+        
+        .upload-label:hover {
+            opacity: 0.9;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .status.success {
+            background: #00c85320;
+            color: #00c853;
+            border: 1px solid #00c85340;
+        }
+        
+        .status.error {
+            background: #ff444420;
+            color: #ff4444;
+            border: 1px solid #ff444440;
+        }
+        
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .photo-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .photo-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        .photo-container {
+            position: relative;
+            cursor: pointer;
+            background: #0a0a0a;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .photo-container img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .download-menu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .photo-card:hover .download-menu {
             opacity: 1;
         }
-        #selection-box {
-            position: fixed;
-            border: 2px solid #3b82f6;
-            background: rgba(59, 130, 246, 0.2);
-            pointer-events: none;
-            z-index: 100;
+        
+        .download-btn {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .download-btn:hover {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .resolutions {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 5px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            min-width: 120px;
+            z-index: 10;
             display: none;
+        }
+        
+        .resolutions.show {
+            display: block;
+        }
+        
+        .resolution-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #333;
+            font-size: 0.85rem;
+        }
+        
+        .resolution-item:last-child {
+            border-bottom: none;
+        }
+        
+        .resolution-item:hover {
+            background: #667eea;
+        }
+        
+        .resolution-name {
+            font-weight: 600;
+        }
+        
+        .resolution-size {
+            font-size: 0.7rem;
+            color: #888;
+            margin-left: 8px;
+        }
+        
+        .photo-info {
+            padding: 15px;
+        }
+        
+        .photo-name {
+            font-size: 0.9rem;
+            color: #ccc;
+            word-break: break-all;
+            margin-bottom: 8px;
+        }
+        
+        .batch-bar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            z-index: 100;
+            display: flex;
+            gap: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid #333;
+        }
+        
+        .batch-btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        
+        .batch-select {
+            background: #667eea;
+            color: white;
+        }
+        
+        .batch-download {
+            background: #00c853;
+            color: white;
+        }
+        
+        .batch-clear {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .checkbox {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            z-index: 5;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 4px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #ff4444;
+            background: #2a2a2a;
+            border-radius: 8px;
+            margin: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
         }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-200 min-h-screen font-sans selection:bg-blue-500/30 select-none">
-
-    <div id="selection-box"></div>
-
-    <header class="sticky top-0 z-40 bg-gray-900/80 backdrop-blur-md border-b border-gray-800 px-6 py-4 shadow-2xl">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-900/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                </div>
-                <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Gallery Explorer</h1>
-            </div>
-            <div class="flex items-center gap-4">
-                <label for="file-upload" class="group relative cursor-pointer overflow-hidden bg-white text-gray-950 px-5 py-2.5 rounded-full font-bold transition-all hover:pr-12">
-                    <span class="relative z-10">Upload Photos</span>
-                    <span class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-all group-hover:opacity-100">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM8.293 6.707a1 1 0 010-1.414l3-3a1 1 0 111.414 1.414L10.414 6H15a1 1 0 010 2H10.414l2.293 2.293a1 1 0 01-1.414 1.414l-3-3z" clip-rule="evenodd" /></svg>
-                    </span>
-                </label>
-                <input id="file-upload" type="file" multiple class="hidden" accept="image/*">
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto p-6 md:p-10 pb-32">
-        <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6"></div>
-        <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32 text-gray-500">
-            <p class="text-lg font-medium">No photos found</p>
-        </div>
-    </main>
-
-    <!-- Batch Selection Bar -->
-    <div id="selection-bar" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 bg-gray-900 border border-gray-700 px-6 py-4 rounded-3xl shadow-2xl flex items-center gap-8 transition-all translate-y-32 opacity-0">
-        <div class="flex items-center gap-3">
-            <span id="selection-count" class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">0</span>
-            <span class="text-sm font-medium text-gray-300">Images Selected</span>
-        </div>
-        <div class="h-6 w-px bg-gray-700"></div>
-        <div class="flex items-center gap-3">
-            <button id="cancel-selection" class="text-sm font-bold text-gray-400 hover:text-white transition-colors">Cancel</button>
-            <button id="delete-selected" class="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-xl text-sm font-bold shadow-lg shadow-red-900/20 transition-all active:scale-95">
-                Delete Selected
-            </button>
-        </div>
+<body>
+    <h1>🎨 High Resolution Art Gallery</h1>
+    <div class="subtitle">Download in original quality • Up to 8K resolution • No compression</div>
+    
+    <div class="upload-area">
+        <label for="file-upload" class="upload-label">📸 Upload Artwork</label>
+        <input type="file" id="file-upload" accept="image/*" multiple>
+        <div id="upload-status"></div>
     </div>
-
-    <div id="lightbox" class="fixed inset-0 z-50 hidden bg-gray-950/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 cursor-pointer">
-        <button id="close-modal" class="absolute top-8 right-8 text-white/40 hover:text-white transition-colors z-30">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-
-        <div id="lightbox-image-container" class="relative w-full h-[65vh] flex items-center justify-center cursor-default">
-            <img id="lightbox-display" src="" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl">
-        </div>
-
-        <div id="lightbox-info-panel" class="mt-8 w-full max-w-3xl bg-gray-900/90 p-8 rounded-3xl border border-gray-800 shadow-2xl cursor-default">
-            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="flex-1 text-center md:text-left overflow-hidden w-full">
-                    <h2 id="meta-filename" class="text-2xl font-bold truncate text-white"></h2>
-                    <span id="meta-details" class="block mt-2 text-xs font-mono text-gray-400"></span>
-                </div>
-                <button id="action-delete" class="flex items-center gap-2 bg-red-500/10 hover:bg-red-600 text-red-500 hover:text-white border border-red-500/20 px-6 py-3 rounded-2xl transition-all font-bold">
-                    Delete Image
-                </button>
-            </div>
-        </div>
+    
+    <div id="gallery" class="gallery">
+        <div class="loading">Loading your gallery...</div>
     </div>
-
+    
+    <div id="batch-bar" class="batch-bar" style="display: none;">
+        <button class="batch-btn batch-select" onclick="toggleSelectAll()">Select All</button>
+        <button class="batch-btn batch-download" onclick="downloadSelected()">Download Selected</button>
+        <button class="batch-btn batch-clear" onclick="clearSelection()">Clear</button>
+        <span id="selection-count" style="margin-left: 10px; color: #888;">0 selected</span>
+    </div>
+    
     <script>
-      const grid = document.getElementById('gallery-grid');
-      const emptyState = document.getElementById('empty-state');
-      const uploader = document.getElementById('file-upload');
-      const modal = document.getElementById('lightbox');
-      const modalImg = document.getElementById('lightbox-display');
-      const closeModal = document.getElementById('close-modal');
-      const metaFilename = document.getElementById('meta-filename');
-      const metaDetails = document.getElementById('meta-details');
-      const btnDelete = document.getElementById('action-delete');
-
-      // Selection elements
-      const selectionBar = document.getElementById('selection-bar');
-      const selectionCountEl = document.getElementById('selection-count');
-      const btnDeleteSelected = document.getElementById('delete-selected');
-      const btnCancelSelection = document.getElementById('cancel-selection');
-      const selectionBox = document.getElementById('selection-box');
-
-      let activePath = null;
-      let selectedPaths = new Set();
-      let isDragging = false;
-      let startPageX, startPageY;
-
-      /**
-        * Fetch all photos from the Rust backend
-        * Updated to "diff" the DOM instead of clearing it to prevent flickering.
-        */
-        async function fetchGallery() {
-          try {
-            const res = await fetch('/api/v1/photos');
-            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-            const images = await res.json();
-
-            if (!images || !images.length) {
-              grid.classList.add('hidden');
-              emptyState.classList.remove('hidden');
-              grid.innerHTML = '';
-            } else {
-              grid.classList.remove('hidden');
-              emptyState.classList.add('hidden');
-
-              // 1. Remove elements that are no longer in the images list
-              const currentFilenames = new Set(images.map(img => img.name));
-              Array.from(grid.children).forEach(card => {
-                if (!currentFilenames.has(card.dataset.path)) {
-                  card.remove();
+        let allPhotos = [];
+        let selectedImages = new Set();
+        let variantsCache = new Map();
+        
+        async function loadGallery() {
+            const galleryDiv = document.getElementById('gallery');
+            galleryDiv.innerHTML = '<div class="loading">Loading your gallery...</div>';
+            
+            try {
+                const response = await fetch('/api/v1/photos');
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                allPhotos = await response.json();
+                console.log('Loaded photos:', allPhotos);
+                
+                if (allPhotos.length === 0) {
+                    galleryDiv.innerHTML = '<div class="loading">No photos yet. Upload your first artwork!</div>';
+                    return;
                 }
-              });
+                
+                // Load variants for all photos
+                await loadVariantsForPhotos(allPhotos);
+                
+                renderGallery();
+            } catch (error) {
+                console.error('Failed to load gallery:', error);
+                galleryDiv.innerHTML = `<div class="error">❌ Failed to load gallery: ${error.message}</div>`;
+            }
+        }
 
-              // 2. Add new elements or update existing ones
-              images.forEach((photo, index) => {
-                const existingCard = grid.querySelector(`[data-path="${photo.name}"]`);
-                if (!existingCard) {
-                  // Create new thumbnail
-                  const newCard = createThumbnail(photo);
-                  // Insert at correct index to maintain sort order (modified time)
-                  if (index >= grid.children.length) {
-                    grid.appendChild(newCard);
-                  } else {
-                    grid.insertBefore(newCard, grid.children[index]);
-                  }
+        // Update the loadVariantsForPhotos function
+        async function loadVariantsForPhotos(photos) {
+          const variantPromises = photos.map(async (photo) => {
+            if (variantsCache.has(photo.path)) return;
+
+            try {
+              // Extract image_id from path (/api/v1/photo/{id})
+              const imageId = photo.path.split('/').pop();
+              const variantResponse = await fetch(`/api/v1/photo/${imageId}/variants`);
+              if (variantResponse.ok) {
+                const variantData = await variantResponse.json();
+                // Store just the size numbers for easy access
+                const variantSizes = {};
+                for (const [res, info] of Object.entries(variantData.variants)) {
+                  variantSizes[res] = info.size;
                 }
-              });
-
-              updateSelectionUI();
-            }
-          } catch (err) {
-            console.error("Gallery fetch failed:", err);
-          }
-        }
-
-      /**
-        * Deletes a single image
-        */
-        async function deleteImage(filename, silent = false) {
-          if (!silent && !confirm(`Delete "${filename}"?`)) return;
-          try {
-            const res = await fetch(`/api/v1/photos/${filename}`, { method: 'DELETE' });
-            if (res.ok) {
-              if (activePath === filename) hideLightbox();
-              selectedPaths.delete(filename);
-              updateSelectionUI();
-              fetchGallery();
-              return true;
-            }
-          } catch (err) {
-            console.error("Delete request error:", err);
-          }
-          return false;
-        }
-
-      /**
-        * Batch delete selected images
-        */
-        async function deleteBatch() {
-          const count = selectedPaths.size;
-          if (!confirm(`Delete ${count} selected images?`)) return;
-
-          const paths = Array.from(selectedPaths);
-          try {
-            const res = await fetch('/api/v1/delete-multiple', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ paths })
-            });
-
-            if (res.ok) {
-              clearSelection();
-              fetchGallery();
-            }
-          } catch (err) {
-            console.error("Batch delete failed:", err);
-          }
-        }
-
-      /**
-        * Creates the DOM element for a photo thumbnail
-        */
-        function createThumbnail(photo) {
-          const filename = photo.name;
-          const isSelected = selectedPaths.has(filename);
-
-          const card = document.createElement('div');
-          card.dataset.path = filename;
-          card.className = `image-card group relative aspect-square bg-gray-900 rounded-2xl overflow-hidden cursor-pointer shadow-md transition-all duration-300 hover:shadow-2xl hover:scale-[1.03] hover:ring-4 hover:ring-blue-600/50 ${isSelected ? 'selected' : ''}`;
-
-          card.innerHTML = `
-            <img src="/photos/${filename}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none" loading="lazy">
-            <button class="quick-delete absolute top-3 right-3 z-20 bg-red-600 text-white w-8 h-8 flex items-center justify-center rounded-full shadow-lg opacity-0 scale-90 transition-all duration-200 hover:bg-red-500 hover:scale-110">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div class="selection-indicator absolute top-3 left-3 z-20 bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg opacity-0 transition-opacity">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
-            </div>`;
-
-          card.onclick = (e) => {
-            if (e.shiftKey || selectedPaths.size > 0) {
-              toggleSelection(filename);
-            } else {
-              showLightbox(filename, photo);
-            }
-          };
-
-          card.querySelector('.quick-delete').onclick = (e) => {
-            e.stopPropagation();
-            deleteImage(filename);
-          };
-
-          return card;
-        }
-
-      function toggleSelection(path) {
-        if (selectedPaths.has(path)) selectedPaths.delete(path);
-        else selectedPaths.add(path);
-        updateSelectionUI();
-      }
-
-      function clearSelection() {
-        selectedPaths.clear();
-        updateSelectionUI();
-      }
-
-      function updateSelectionUI() {
-        document.querySelectorAll('.image-card').forEach(card => {
-          if (selectedPaths.has(card.dataset.path)) card.classList.add('selected');
-          else card.classList.remove('selected');
-        });
-        selectionCountEl.textContent = selectedPaths.size;
-        if (selectedPaths.size > 0) {
-          selectionBar.classList.remove('translate-y-32', 'opacity-0');
-          selectionBar.classList.add('translate-y-0', 'opacity-100');
-        } else {
-          selectionBar.classList.add('translate-y-32', 'opacity-0');
-          selectionBar.classList.remove('translate-y-0', 'opacity-100');
-        }
-      }
-
-      // --- Drag selection logic ---
-
-      window.addEventListener('mousedown', (e) => {
-        // Ignore if lightbox is open or we are clicking interactive elements
-        if (modal.classList.contains('flex') || e.target.closest('button') || e.target.closest('.image-card') || e.target.closest('#selection-bar')) return;
-
-        isDragging = true;
-        // Use page coordinates to handle scrolling correctly
-        startPageX = e.pageX;
-        startPageY = e.pageY;
-
-        selectionBox.style.left = `${startPageX}px`;
-        selectionBox.style.top = `${startPageY}px`;
-        selectionBox.style.width = '0px';
-        selectionBox.style.height = '0px';
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-
-        const currentPageX = e.pageX;
-        const currentPageY = e.pageY;
-
-        const width = Math.abs(currentPageX - startPageX);
-        const height = Math.abs(currentPageY - startPageY);
-        const left = Math.min(currentPageX, startPageX);
-        const top = Math.min(currentPageY, startPageY);
-
-        if (width > 5 || height > 5) {
-          selectionBox.style.display = 'block';
-          selectionBox.style.left = `${left}px`;
-          selectionBox.style.top = `${top}px`;
-          selectionBox.style.width = `${width}px`;
-          selectionBox.style.height = `${height}px`;
-
-          // Get viewport-relative box for collision detection
-          const boxRect = selectionBox.getBoundingClientRect();
-
-          document.querySelectorAll('.image-card').forEach(card => {
-            const r = card.getBoundingClientRect();
-            // Standard AABB collision check
-            const overlap = !(
-              r.right < boxRect.left ||
-              r.left > boxRect.right ||
-              r.bottom < boxRect.top ||
-              r.top > boxRect.bottom
-            );
-
-            if (overlap) {
-              selectedPaths.add(card.dataset.path);
+                variantsCache.set(photo.path, variantSizes);
+              } else {
+                variantsCache.set(photo.path, {});
+              }
+            } catch (error) {
+              console.error(`Failed to load variants for ${photo.name}:`, error);
+              variantsCache.set(photo.path, {});
             }
           });
-          updateSelectionUI();
+
+          await Promise.all(variantPromises);
         }
-      });
 
-      window.addEventListener('mouseup', () => {
-        isDragging = false;
-        selectionBox.style.display = 'none';
-      });
-
-      // --- Lightbox logic ---
-
-      async function showLightbox(filename, photoData = null) {
-        activePath = filename;
-        modalImg.src = `/photos/${filename}`;
-        metaFilename.textContent = filename;
-        modal.classList.replace('hidden', 'flex');
-        document.body.style.overflow = 'hidden';
-
-        if (photoData) {
-          const size = photoData.size >= 1048576 ? (photoData.size / 1048576).toFixed(2) + " MB" : (photoData.size / 1024).toFixed(1) + " KB";
-          const date = photoData.modified ? new Date(photoData.modified * 1000).toLocaleString() : "Unknown";
-          metaDetails.textContent = `${size} • Modified: ${date}`;
+        // Update the downloadImage function to include resolution parameter
+        function downloadImage(imageId, resolution, filename) {
+          const url = `/api/v1/photo/${imageId}?resolution=${resolution}`;
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${filename.split('.')[0]}_${resolution}.${filename.split('.').pop()}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
         }
-      }
 
-      function hideLightbox() {
-        modal.classList.replace('flex', 'hidden');
-        modalImg.src = '';
-        document.body.style.overflow = 'auto';
-        activePath = null;
-      }
-
-      // --- Event Listeners ---
-
-      closeModal.onclick = hideLightbox;
-      modal.onclick = (e) => {
-        if (e.target === modal || e.target.id === 'lightbox-image-container') hideLightbox();
-      };
-
-      btnDelete.onclick = () => activePath && deleteImage(activePath);
-      btnDeleteSelected.onclick = deleteBatch;
-      btnCancelSelection.onclick = clearSelection;
-
-      uploader.onchange = async () => {
-        const endpoint = '/api/v1/upload';
-        let anySuccess = false;
-
-        for (const file of uploader.files) {
-          const data = new FormData();
-          data.append('file', file);
-          try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              body: data
-            });
-            if (response.ok) {
-              anySuccess = true;
-            } else {
-              console.error(`Upload failed: ${response.status}`);
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function getResolutionLabel(resolution) {
+            const labels = {
+                'original': '📷 Original',
+                '8k': '8K Ultra HD',
+                '4k': '4K Ultra HD',
+                'desktop': '🖥️ Desktop (2K)',
+                'web': '🌐 Web (1080p)',
+                'mobile': '📱 Mobile (720p)'
+            };
+            return labels[resolution] || resolution;
+        }
+        
+        function toggleDownloadMenu(photoId) {
+            const menu = document.getElementById(`resolutions-${photoId}`);
+            if (menu) {
+                menu.classList.toggle('show');
             }
-          } catch (err) {
-            console.error("Upload Error:", err);
-          }
         }
-        uploader.value = '';
-
-        if (anySuccess) {
-          fetchGallery();
-          setTimeout(fetchGallery, 500);
+        
+        function toggleSelect(photoId, checked) {
+            if (checked) {
+                selectedImages.add(photoId);
+            } else {
+                selectedImages.delete(photoId);
+            }
+            updateBatchBar();
         }
-      };
-
-      function initRealtime() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
-        ws.onmessage = () => fetchGallery();
-        ws.onclose = () => {
-          setTimeout(() => initRealtime(), 3000);
-        };
-      }
-
-      window.onkeydown = (e) => {
-        if (e.key === 'Escape') {
-          if (selectedPaths.size > 0) clearSelection();
-          else hideLightbox();
+        
+        function toggleSelectAll() {
+            const allSelected = selectedImages.size === allPhotos.length;
+            
+            if (allSelected) {
+                selectedImages.clear();
+            } else {
+                allPhotos.forEach(photo => {
+                    const imageId = photo.path.split('/').pop();
+                    selectedImages.add(imageId);
+                });
+            }
+            
+            updateBatchBar();
+            renderGallery(); // Re-render to update checkboxes
         }
-      };
-
-      fetchGallery();
-      initRealtime();
+        
+        function clearSelection() {
+            selectedImages.clear();
+            updateBatchBar();
+            renderGallery();
+        }
+        
+        function updateBatchBar() {
+            const batchBar = document.getElementById('batch-bar');
+            const selectionCount = document.getElementById('selection-count');
+            
+            if (selectedImages.size > 0) {
+                batchBar.style.display = 'flex';
+                selectionCount.textContent = `${selectedImages.size} selected`;
+            } else {
+                batchBar.style.display = 'none';
+            }
+        }
+        
+        async function downloadSelected() {
+            const downloadPromises = [];
+            
+            for (const imageId of selectedImages) {
+                const photo = allPhotos.find(p => p.path.split('/').pop() === imageId);
+                if (photo) {
+                    // Default to original quality for batch download
+                    downloadImage(imageId, 'original', photo.name);
+                    // Small delay to avoid overwhelming browser
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+            }
+        }
+        
+        function renderGallery() {
+            const galleryDiv = document.getElementById('gallery');
+            galleryDiv.innerHTML = '';
+            
+            for (const photo of allPhotos) {
+                const imageId = photo.path.split('/').pop();
+                const variants = variantsCache.get(photo.path) || {};
+                const sizeLabels = {
+                    'original': '📷 Original',
+                    '8k': '8K',
+                    '4k': '4K',
+                    'desktop': '2K',
+                    'web': '1080p',
+                    'mobile': '720p'
+                };
+                
+                // Sort resolutions by size (descending)
+                const sortedResolutions = Object.keys(variants).sort((a, b) => {
+                    const order = ['original', '8k', '4k', 'desktop', 'web', 'mobile'];
+                    return order.indexOf(a) - order.indexOf(b);
+                });
+                
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                
+                card.innerHTML = `
+                    <div class="photo-container">
+                        <input type="checkbox" class="checkbox" 
+                               ${selectedImages.has(imageId) ? 'checked' : ''}
+                               onchange="toggleSelect('${imageId}', this.checked)">
+                        <img src="${photo.path}" alt="${photo.name}" loading="lazy">
+                        <div class="download-menu">
+                            <button class="download-btn" onclick="toggleDownloadMenu('${imageId}')">
+                                ⬇️ Download
+                            </button>
+                            <div id="resolutions-${imageId}" class="resolutions">
+                                ${sortedResolutions.map(res => `
+                                    <div class="resolution-item" onclick="downloadImage('${imageId}', '${res}', '${photo.name}')">
+                                        <span class="resolution-name">${sizeLabels[res] || res}</span>
+                                        <span class="resolution-size">${formatFileSize(variants[res] || 0)}</span>
+                                    </div>
+                                `).join('')}
+                                ${sortedResolutions.length === 0 ? `
+                                    <div class="resolution-item" onclick="downloadImage('${imageId}', 'original', '${photo.name}')">
+                                        <span class="resolution-name">Original</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="photo-info">
+                        <div class="photo-name">${photo.name}</div>
+                        <div class="photo-size">${formatFileSize(photo.size)}</div>
+                    </div>
+                `;
+                
+                galleryDiv.appendChild(card);
+            }
+        }
+        
+        async function uploadFiles(files) {
+            const statusDiv = document.getElementById('upload-status');
+            
+            for (const file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                statusDiv.innerHTML = `<div class="status"><span class="spinner"></span> Uploading ${file.name}...</div>`;
+                
+                try {
+                    const response = await fetch('/api/v1/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const result = await response.json();
+                    console.log('Upload result:', result);
+                    
+                    statusDiv.innerHTML = `<div class="status success">✅ Uploaded ${file.name} - Processing in background (variants will appear soon)</div>`;
+                    
+                    // Reload after a delay
+                    setTimeout(() => {
+                        loadGallery();
+                    }, 3000);
+                    
+                } catch (error) {
+                    console.error('Upload failed:', error);
+                    statusDiv.innerHTML = `<div class="status error">❌ Failed to upload ${file.name}: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        // Setup file upload
+        const fileInput = document.getElementById('file-upload');
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadFiles(e.target.files);
+                fileInput.value = '';
+            }
+        });
+        
+        // Load gallery on page load
+        loadGallery();
+        
+        // Auto-refresh every 15 seconds
+        setInterval(() => {
+            loadVariantsForPhotos(allPhotos).then(() => renderGallery());
+        }, 15000);
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.download-menu')) {
+                document.querySelectorAll('.resolutions.show').forEach(menu => {
+                    menu.classList.remove('show');
+                });
+            }
+        });
     </script>
 </body>
 </html>

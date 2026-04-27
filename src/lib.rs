@@ -3,6 +3,7 @@ pub mod api;
 pub mod config;
 pub mod error;
 pub mod models;
+pub mod processor;
 pub mod service;
 pub mod state;
 pub mod watcher;
