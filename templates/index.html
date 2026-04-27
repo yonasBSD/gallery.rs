@@ -16,6 +16,7 @@
             background: #0a0a0a;
             color: #ffffff;
             padding: 20px;
+            overflow-x: hidden;
         }
         
         h1 {
@@ -96,6 +97,7 @@
             border-radius: 12px;
             overflow: hidden;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
         }
         
         .photo-card:hover {
@@ -105,7 +107,6 @@
         
         .photo-container {
             position: relative;
-            cursor: pointer;
             background: #0a0a0a;
             min-height: 250px;
             display: flex;
@@ -120,19 +121,22 @@
             display: block;
         }
         
-        .download-menu {
+        .action-menu {
             position: absolute;
             top: 10px;
             right: 10px;
+            display: flex;
+            gap: 8px;
             opacity: 0;
             transition: opacity 0.3s;
+            z-index: 10;
         }
         
-        .photo-card:hover .download-menu {
+        .photo-card:hover .action-menu {
             opacity: 1;
         }
         
-        .download-btn {
+        .download-btn, .delete-btn {
             background: rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
             color: white;
@@ -153,6 +157,11 @@
             transform: scale(1.05);
         }
         
+        .delete-btn:hover {
+            background: #ff4444;
+            transform: scale(1.05);
+        }
+        
         .resolutions {
             position: absolute;
             top: 100%;
@@ -161,8 +170,8 @@
             background: #1a1a1a;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-            min-width: 120px;
-            z-index: 10;
+            min-width: 150px;
+            z-index: 20;
             display: none;
         }
         
@@ -171,11 +180,14 @@
         }
         
         .resolution-item {
-            padding: 8px 12px;
+            padding: 10px 12px;
             cursor: pointer;
             transition: background 0.2s;
             border-bottom: 1px solid #333;
             font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .resolution-item:last-child {
@@ -192,8 +204,7 @@
         
         .resolution-size {
             font-size: 0.7rem;
-            color: #888;
-            margin-left: 8px;
+            color: #aaa;
         }
         
         .photo-info {
@@ -205,6 +216,171 @@
             color: #ccc;
             word-break: break-all;
             margin-bottom: 8px;
+        }
+        
+        .photo-size {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .lightbox.active {
+            display: flex;
+        }
+        
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .lightbox-image {
+            max-width: 100%;
+            max-height: 85vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 50%;
+            font-size: 30px;
+            transition: all 0.2s;
+        }
+        
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .lightbox-prev {
+            left: 20px;
+        }
+        
+        .lightbox-next {
+            right: 20px;
+        }
+        
+        .lightbox-info {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: white;
+            padding: 15px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        }
+        
+        .lightbox-name {
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+        
+        .lightbox-download {
+            background: rgba(102, 126, 234, 0.9);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0 5px;
+            transition: all 0.2s;
+        }
+        
+        .lightbox-download:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+        
+        .lightbox-delete {
+            background: rgba(255, 68, 68, 0.9);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 0 5px;
+            transition: all 0.2s;
+        }
+        
+        .lightbox-delete:hover {
+            background: #cc0000;
+            transform: scale(1.05);
+        }
+        
+        .lightbox-resolutions {
+            display: inline-flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .lightbox-res-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        
+        .lightbox-res-btn:hover {
+            background: #667eea;
         }
         
         .batch-bar {
@@ -241,8 +417,13 @@
             color: white;
         }
         
-        .batch-clear {
+        .batch-delete {
             background: #ff4444;
+            color: white;
+        }
+        
+        .batch-clear {
+            background: #666;
             color: white;
         }
         
@@ -274,6 +455,39 @@
             margin: 20px;
         }
         
+        .confirm-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+            z-index: 2000;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid #444;
+        }
+        
+        .confirm-dialog button {
+            margin: 10px;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        .confirm-yes {
+            background: #ff4444;
+            color: white;
+        }
+        
+        .confirm-no {
+            background: #666;
+            color: white;
+        }
+        
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
@@ -291,7 +505,7 @@
 </head>
 <body>
     <h1>🎨 High Resolution Art Gallery</h1>
-    <div class="subtitle">Download in original quality • Up to 8K resolution • No compression</div>
+    <div class="subtitle">Click any image to view in lightbox • Download in original quality • Hover for actions</div>
     
     <div class="upload-area">
         <label for="file-upload" class="upload-label">📸 Upload Artwork</label>
@@ -303,9 +517,28 @@
         <div class="loading">Loading your gallery...</div>
     </div>
     
+    <!-- Lightbox -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+        <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+        <div class="lightbox-nav lightbox-prev" onclick="prevImage()">‹</div>
+        <div class="lightbox-nav lightbox-next" onclick="nextImage()">›</div>
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <img id="lightbox-img" class="lightbox-image" alt="">
+        </div>
+        <div class="lightbox-info">
+            <div class="lightbox-name" id="lightbox-name"></div>
+            <div class="lightbox-resolutions" id="lightbox-resolutions"></div>
+            <div>
+                <button class="lightbox-download" onclick="downloadCurrentImage()">⬇️ Download Current</button>
+                <button class="lightbox-delete" onclick="deleteCurrentImage()">🗑️ Delete</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="batch-bar" class="batch-bar" style="display: none;">
         <button class="batch-btn batch-select" onclick="toggleSelectAll()">Select All</button>
         <button class="batch-btn batch-download" onclick="downloadSelected()">Download Selected</button>
+        <button class="batch-btn batch-delete" onclick="deleteSelected()">Delete Selected</button>
         <button class="batch-btn batch-clear" onclick="clearSelection()">Clear</button>
         <span id="selection-count" style="margin-left: 10px; color: #888;">0 selected</span>
     </div>
@@ -314,6 +547,7 @@
         let allPhotos = [];
         let selectedImages = new Set();
         let variantsCache = new Map();
+        let currentLightboxIndex = 0;
         
         async function loadGallery() {
             const galleryDiv = document.getElementById('gallery');
@@ -331,57 +565,42 @@
                     return;
                 }
                 
-                // Load variants for all photos
                 await loadVariantsForPhotos(allPhotos);
-                
                 renderGallery();
             } catch (error) {
                 console.error('Failed to load gallery:', error);
                 galleryDiv.innerHTML = `<div class="error">❌ Failed to load gallery: ${error.message}</div>`;
             }
         }
-
-        // Update the loadVariantsForPhotos function
+        
         async function loadVariantsForPhotos(photos) {
-          const variantPromises = photos.map(async (photo) => {
-            if (variantsCache.has(photo.path)) return;
-
-            try {
-              // Extract image_id from path (/api/v1/photo/{id})
-              const imageId = photo.path.split('/').pop();
-              const variantResponse = await fetch(`/api/v1/photo/${imageId}/variants`);
-              if (variantResponse.ok) {
-                const variantData = await variantResponse.json();
-                // Store just the size numbers for easy access
-                const variantSizes = {};
-                for (const [res, info] of Object.entries(variantData.variants)) {
-                  variantSizes[res] = info.size;
+            const variantPromises = photos.map(async (photo) => {
+                if (variantsCache.has(photo.path)) return;
+                
+                try {
+                    const imageId = photo.path.split('/').pop();
+                    const variantResponse = await fetch(`/api/v1/photo/${imageId}/variants`);
+                    if (variantResponse.ok) {
+                        const variantData = await variantResponse.json();
+                        const variantSizes = {};
+                        for (const [res, info] of Object.entries(variantData.variants || {})) {
+                            variantSizes[res] = info.size || info;
+                        }
+                        variantsCache.set(photo.path, variantSizes);
+                    } else {
+                        variantsCache.set(photo.path, {});
+                    }
+                } catch (error) {
+                    console.error(`Failed to load variants for ${photo.name}:`, error);
+                    variantsCache.set(photo.path, {});
                 }
-                variantsCache.set(photo.path, variantSizes);
-              } else {
-                variantsCache.set(photo.path, {});
-              }
-            } catch (error) {
-              console.error(`Failed to load variants for ${photo.name}:`, error);
-              variantsCache.set(photo.path, {});
-            }
-          });
-
-          await Promise.all(variantPromises);
+            });
+            
+            await Promise.all(variantPromises);
         }
-
-        // Update the downloadImage function to include resolution parameter
-        function downloadImage(imageId, resolution, filename) {
-          const url = `/api/v1/photo/${imageId}?resolution=${resolution}`;
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `${filename.split('.')[0]}_${resolution}.${filename.split('.').pop()}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }
-
+        
         function formatFileSize(bytes) {
+            if (!bytes || bytes === 0) return 'Unknown';
             if (bytes < 1024) return bytes + ' B';
             if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
             return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
@@ -397,6 +616,173 @@
                 'mobile': '📱 Mobile (720p)'
             };
             return labels[resolution] || resolution;
+        }
+        
+        async function deleteImage(imageId, imageName) {
+            if (!confirm(`Are you sure you want to delete "${imageName}"?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/v1/photos/${imageId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    console.log(`Deleted: ${imageName}`);
+                    // Remove from local arrays
+                    const index = allPhotos.findIndex(p => p.path.split('/').pop() === imageId);
+                    if (index !== -1) {
+                        allPhotos.splice(index, 1);
+                        variantsCache.delete(imageId);
+                        selectedImages.delete(imageId);
+                    }
+                    
+                    // Close lightbox if it was the deleted image
+                    if (document.getElementById('lightbox').classList.contains('active')) {
+                        closeLightbox();
+                    }
+                    
+                    // Refresh gallery
+                    renderGallery();
+                    updateBatchBar();
+                    
+                    // Show success message
+                    const statusDiv = document.getElementById('upload-status');
+                    statusDiv.innerHTML = `<div class="status success">✅ Deleted: ${imageName}</div>`;
+                    setTimeout(() => {
+                        if (statusDiv.innerHTML.includes(imageName)) {
+                            statusDiv.innerHTML = '';
+                        }
+                    }, 3000);
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Delete failed:', error);
+                const statusDiv = document.getElementById('upload-status');
+                statusDiv.innerHTML = `<div class="status error">❌ Failed to delete ${imageName}: ${error.message}</div>`;
+                setTimeout(() => {
+                    if (statusDiv.innerHTML.includes(imageName)) {
+                        statusDiv.innerHTML = '';
+                    }
+                }, 3000);
+            }
+        }
+        
+        async function deleteSelected() {
+            const selectedCount = selectedImages.size;
+            if (selectedCount === 0) return;
+            
+            if (!confirm(`Delete ${selectedCount} selected image(s)?`)) {
+                return;
+            }
+            
+            const imageIds = Array.from(selectedImages);
+            let deleted = 0;
+            
+            for (const imageId of imageIds) {
+                const photo = allPhotos.find(p => p.path.split('/').pop() === imageId);
+                if (photo) {
+                    try {
+                        const response = await fetch(`/api/v1/photos/${imageId}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            deleted++;
+                            const index = allPhotos.findIndex(p => p.path.split('/').pop() === imageId);
+                            if (index !== -1) {
+                                allPhotos.splice(index, 1);
+                            }
+                            variantsCache.delete(imageId);
+                            selectedImages.delete(imageId);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to delete ${photo.name}:`, error);
+                    }
+                }
+            }
+            
+            renderGallery();
+            updateBatchBar();
+            
+            const statusDiv = document.getElementById('upload-status');
+            statusDiv.innerHTML = `<div class="status success">✅ Deleted ${deleted} image(s)</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 3000);
+            
+            if (document.getElementById('lightbox').classList.contains('active')) {
+                closeLightbox();
+            }
+        }
+        
+        function downloadImage(imageId, resolution, filename) {
+            const url = `/api/v1/photo/${imageId}?resolution=${resolution}`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${filename.split('.')[0]}_${resolution}.${filename.split('.').pop()}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            const photo = allPhotos[index];
+            const imageId = photo.path.split('/').pop();
+            const variants = variantsCache.get(photo.path) || {};
+            
+            const highResRes = variants['original'] ? 'original' : (variants['4k'] ? '4k' : 'web');
+            const highResUrl = `/api/v1/photo/${imageId}?resolution=${highResRes}`;
+            
+            document.getElementById('lightbox-img').src = highResUrl;
+            document.getElementById('lightbox-name').textContent = photo.name;
+            
+            const resolutionsDiv = document.getElementById('lightbox-resolutions');
+            const sortedResolutions = ['original', '8k', '4k', 'desktop', 'web', 'mobile']
+                .filter(res => variants[res] !== undefined);
+            
+            resolutionsDiv.innerHTML = sortedResolutions.map(res => `
+                <button class="lightbox-res-btn" onclick="downloadImage('${imageId}', '${res}', '${photo.name}')">
+                    ${getResolutionLabel(res)} (${formatFileSize(variants[res])})
+                </button>
+            `).join('');
+            
+            document.getElementById('lightbox').classList.add('active');
+        }
+        
+        function closeLightbox(event) {
+            if (!event || event.target === document.getElementById('lightbox') || event.target.classList.contains('lightbox-close')) {
+                document.getElementById('lightbox').classList.remove('active');
+            }
+        }
+        
+        function prevImage() {
+            if (currentLightboxIndex > 0) {
+                openLightbox(currentLightboxIndex - 1);
+            }
+        }
+        
+        function nextImage() {
+            if (currentLightboxIndex < allPhotos.length - 1) {
+                openLightbox(currentLightboxIndex + 1);
+            }
+        }
+        
+        function downloadCurrentImage() {
+            const photo = allPhotos[currentLightboxIndex];
+            const imageId = photo.path.split('/').pop();
+            downloadImage(imageId, 'original', photo.name);
+        }
+        
+        function deleteCurrentImage() {
+            const photo = allPhotos[currentLightboxIndex];
+            const imageId = photo.path.split('/').pop();
+            const imageName = photo.name;
+            closeLightbox();
+            deleteImage(imageId, imageName);
         }
         
         function toggleDownloadMenu(photoId) {
@@ -428,7 +814,7 @@
             }
             
             updateBatchBar();
-            renderGallery(); // Re-render to update checkboxes
+            renderGallery();
         }
         
         function clearSelection() {
@@ -450,15 +836,11 @@
         }
         
         async function downloadSelected() {
-            const downloadPromises = [];
-            
             for (const imageId of selectedImages) {
                 const photo = allPhotos.find(p => p.path.split('/').pop() === imageId);
                 if (photo) {
-                    // Default to original quality for batch download
                     downloadImage(imageId, 'original', photo.name);
-                    // Small delay to avoid overwhelming browser
-                    await new Promise(resolve => setTimeout(resolve, 100));
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
             }
         }
@@ -467,7 +849,8 @@
             const galleryDiv = document.getElementById('gallery');
             galleryDiv.innerHTML = '';
             
-            for (const photo of allPhotos) {
+            for (let i = 0; i < allPhotos.length; i++) {
+                const photo = allPhotos[i];
                 const imageId = photo.path.split('/').pop();
                 const variants = variantsCache.get(photo.path) || {};
                 const sizeLabels = {
@@ -479,38 +862,46 @@
                     'mobile': '720p'
                 };
                 
-                // Sort resolutions by size (descending)
-                const sortedResolutions = Object.keys(variants).sort((a, b) => {
-                    const order = ['original', '8k', '4k', 'desktop', 'web', 'mobile'];
-                    return order.indexOf(a) - order.indexOf(b);
-                });
+                const sortedResolutions = ['original', '8k', '4k', 'desktop', 'web', 'mobile']
+                    .filter(res => variants[res] !== undefined);
                 
                 const card = document.createElement('div');
                 card.className = 'photo-card';
+                card.onclick = (e) => {
+                    if (!e.target.closest('.action-menu') && !e.target.closest('.checkbox')) {
+                        openLightbox(i);
+                    }
+                };
                 
                 card.innerHTML = `
                     <div class="photo-container">
                         <input type="checkbox" class="checkbox" 
                                ${selectedImages.has(imageId) ? 'checked' : ''}
+                               onclick="event.stopPropagation()"
                                onchange="toggleSelect('${imageId}', this.checked)">
                         <img src="${photo.path}" alt="${photo.name}" loading="lazy">
-                        <div class="download-menu">
-                            <button class="download-btn" onclick="toggleDownloadMenu('${imageId}')">
-                                ⬇️ Download
-                            </button>
-                            <div id="resolutions-${imageId}" class="resolutions">
-                                ${sortedResolutions.map(res => `
-                                    <div class="resolution-item" onclick="downloadImage('${imageId}', '${res}', '${photo.name}')">
-                                        <span class="resolution-name">${sizeLabels[res] || res}</span>
-                                        <span class="resolution-size">${formatFileSize(variants[res] || 0)}</span>
-                                    </div>
-                                `).join('')}
-                                ${sortedResolutions.length === 0 ? `
-                                    <div class="resolution-item" onclick="downloadImage('${imageId}', 'original', '${photo.name}')">
-                                        <span class="resolution-name">Original</span>
-                                    </div>
-                                ` : ''}
+                        <div class="action-menu" onclick="event.stopPropagation()">
+                            <div class="download-menu-wrapper">
+                                <button class="download-btn" onclick="toggleDownloadMenu('${imageId}')">
+                                    ⬇️
+                                </button>
+                                <div id="resolutions-${imageId}" class="resolutions">
+                                    ${sortedResolutions.map(res => `
+                                        <div class="resolution-item" onclick="downloadImage('${imageId}', '${res}', '${photo.name}')">
+                                            <span class="resolution-name">${sizeLabels[res] || res}</span>
+                                            <span class="resolution-size">${formatFileSize(variants[res])}</span>
+                                        </div>
+                                    `).join('')}
+                                    ${sortedResolutions.length === 0 ? `
+                                        <div class="resolution-item" onclick="downloadImage('${imageId}', 'original', '${photo.name}')">
+                                            <span class="resolution-name">Original</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
                             </div>
+                            <button class="delete-btn" onclick="deleteImage('${imageId}', '${photo.name}')">
+                                🗑️
+                            </button>
                         </div>
                     </div>
                     <div class="photo-info">
@@ -543,9 +934,8 @@
                     const result = await response.json();
                     console.log('Upload result:', result);
                     
-                    statusDiv.innerHTML = `<div class="status success">✅ Uploaded ${file.name} - Processing in background (variants will appear soon)</div>`;
+                    statusDiv.innerHTML = `<div class="status success">✅ Uploaded ${file.name} - Processing in background</div>`;
                     
-                    // Reload after a delay
                     setTimeout(() => {
                         loadGallery();
                     }, 3000);
@@ -556,6 +946,15 @@
                 }
             }
         }
+        
+        // Keyboard navigation for lightbox
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('lightbox').classList.contains('active')) {
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') prevImage();
+                if (e.key === 'ArrowRight') nextImage();
+            }
+        });
         
         // Setup file upload
         const fileInput = document.getElementById('file-upload');
@@ -576,7 +975,7 @@
         
         // Close dropdowns when clicking outside
         document.addEventListener('click', (e) => {
-            if (!e.target.closest('.download-menu')) {
+            if (!e.target.closest('.download-menu-wrapper')) {
                 document.querySelectorAll('.resolutions.show').forEach(menu => {
                     menu.classList.remove('show');
                 });

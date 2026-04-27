@@ -410,22 +410,34 @@ pub async fn upload_photo(
 
 pub async fn delete_photo(
     State(state): State<AppState>,
-    Path(filename): Path<String>,
+    Path(identifier): Path<String>,
 ) -> AppResult<StatusCode> {
-    trace!(%filename, "delete_photo called");
-    let path = state.storage_path().join(&filename);
-    debug!(path = %path.display(), "computed path for deletion");
+    trace!(%identifier, "delete_photo called");
+    
+    // Check if this looks like a UUID (image ID) or a filename
+    let is_uuid = identifier.contains('-') && identifier.len() >= 32;
+    
+    if is_uuid {
+        // Delete by UUID - look up in database
+        return delete_photo_by_id(State(state), Path(identifier)).await;
+    }
+    
+    // Otherwise, treat as filename (legacy behavior)
+    let path = state.storage_path().join(&identifier);
+    debug!(path = %path.display(), "computed path for deletion (legacy)");
+    
     if !path.starts_with(state.storage_path()) {
-        warn!(%filename, "attempt to delete outside storage_dir");
+        warn!(%identifier, "attempt to delete outside storage_dir");
         return Ok(StatusCode::FORBIDDEN);
     }
+    
     if path.exists() {
-        fs::remove_file(path).await?;
-        info!(%filename, "file deleted");
+        tokio::fs::remove_file(path).await?;
+        info!(%identifier, "file deleted");
         state.notify();
         Ok(StatusCode::OK)
     } else {
-        warn!(%filename, "delete requested but file not found");
+        warn!(%identifier, "delete requested but file not found");
         Ok(StatusCode::NOT_FOUND)
     }
 }
@@ -446,6 +458,102 @@ pub async fn delete_photos(
         }
     }
     state.notify();
+    Ok(StatusCode::OK)
+}
+
+pub async fn delete_photo_by_id(
+    State(state): State<AppState>,
+    Path(image_id): Path<String>,
+) -> AppResult<StatusCode> {
+    trace!(%image_id, "delete_photo_by_id called");
+    
+    // First, get the image info from database
+    let image_info: Option<(String, String)> = sqlx::query_as(
+        "SELECT original_filename, original_path FROM images WHERE id = ?1"
+    )
+    .bind(&image_id)
+    .fetch_optional(state.db())
+    .await
+    .map_err(|e| crate::error::AppError::Internal(format!("Database query failed: {}", e)))?;
+    
+    let (original_filename, original_path) = match image_info {
+        Some(info) => info,
+        None => {
+            warn!(%image_id, "image not found in database");
+            return Ok(StatusCode::NOT_FOUND);
+        }
+    };
+    
+    debug!(%image_id, %original_filename, %original_path, "found image in database");
+    
+    // Resolve the original path
+    let storage_path = state.storage_path();
+    let absolute_original_path = resolve_path(&original_path, storage_path);
+    
+    // Delete original file if it exists
+    if absolute_original_path.exists() {
+        tokio::fs::remove_file(&absolute_original_path).await?;
+        info!(%image_id, path = %absolute_original_path.display(), "deleted original file");
+    } else {
+        warn!(%image_id, path = %absolute_original_path.display(), "original file not found");
+    }
+    
+    // Delete all variant files
+    let variants: Vec<String> = sqlx::query_scalar(
+        "SELECT file_path FROM variants WHERE image_id = ?1"
+    )
+    .bind(&image_id)
+    .fetch_all(state.db())
+    .await
+    .map_err(|e| crate::error::AppError::Internal(format!("Variant query failed: {}", e)))?;
+    
+    for variant_path in variants {
+        let absolute_variant_path = resolve_path(&variant_path, storage_path);
+        if absolute_variant_path.exists() {
+            tokio::fs::remove_file(&absolute_variant_path).await?;
+            debug!(%image_id, path = %absolute_variant_path.display(), "deleted variant file");
+        }
+    }
+    
+    // Delete the image directory (originals/{image_id}/) if it's empty
+    let originals_dir = storage_path.join("originals").join(&image_id);
+    if originals_dir.exists() && originals_dir.is_dir() {
+        // Try to remove the directory (will only succeed if empty)
+        if let Err(e) = tokio::fs::remove_dir(&originals_dir).await {
+            debug!(%image_id, path = %originals_dir.display(), error = %e, "could not remove originals directory (may not be empty)");
+        } else {
+            info!(%image_id, path = %originals_dir.display(), "deleted originals directory");
+        }
+    }
+    
+    // Delete the variants directory (variants/{image_id}/) if it's empty
+    let variants_dir = storage_path.join("variants").join(&image_id);
+    if variants_dir.exists() && variants_dir.is_dir() {
+        if let Err(e) = tokio::fs::remove_dir(&variants_dir).await {
+            debug!(%image_id, path = %variants_dir.display(), error = %e, "could not remove variants directory");
+        } else {
+            info!(%image_id, path = %variants_dir.display(), "deleted variants directory");
+        }
+    }
+    
+    // Delete from database
+    // Delete variants first (foreign key constraint)
+    sqlx::query("DELETE FROM variants WHERE image_id = ?1")
+        .bind(&image_id)
+        .execute(state.db())
+        .await
+        .map_err(|e| crate::error::AppError::Internal(format!("Failed to delete variants: {}", e)))?;
+    
+    // Then delete the image
+    sqlx::query("DELETE FROM images WHERE id = ?1")
+        .bind(&image_id)
+        .execute(state.db())
+        .await
+        .map_err(|e| crate::error::AppError::Internal(format!("Failed to delete image: {}", e)))?;
+    
+    info!(%image_id, %original_filename, "image and variants deleted successfully");
+    state.notify();
+    
     Ok(StatusCode::OK)
 }
 

@@ -59,10 +59,10 @@ impl GalleryService {
             .route("/api/v1/photos/{filename}", delete(api::delete_photo))
             .route("/api/v1/photo/{image_id}", get(api::get_photo))
             .route("/api/v1/photo/{image_id}/variants", get(api::get_variants))
+            .route("/api/v1/photo/{image_id}", delete(api::delete_photo_by_id))
             .route("/api/v1/debug", get(api::debug_db))
             .route("/photos/{filename}", get(api::get_photo_by_filename))
             .route("/ws", get(api::ws_handler))
-            //.nest_service("/photos", ServeDir::new(self.state.storage_path()))
             .fallback_service(ServeDir::new("templates"))
             // INCREASE BODY LIMIT: Axum defaults to 2MB, which causes "NetworkError" on large photos
             .layer(DefaultBodyLimit::max(250 * 1024 * 1024))
